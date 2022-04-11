@@ -1,6 +1,6 @@
-# Nurarihyon
+# Nurikabe
 
-This is Nurarihyon, a Battlesnake implemented in Python. It's deployed with [Replit](https://repl.it).
+This is Nurikabe, a Battlesnake implemented in Python. It's deployed with [Replit](https://repl.it).
 
 ## Technologies Used
 
@@ -16,7 +16,7 @@ This is Nurarihyon, a Battlesnake implemented in Python. It's deployed with [Rep
 
 ## Customizations
 
-Nurarihyon presently uses these settings for personalizing its appearance:
+Nurikabe presently uses these settings for personalizing its appearance:
 
 ```python
 return {
@@ -32,4 +32,4 @@ return {
 
 ## Behavior
 
-On every turn of each game, Nurarihyon first removes moves that move Nurarihyon back on its own neck, hit walls, hit itself, and collide with others from possibility. If all moves are removed from possibility, then Nurarihyon moves up. Otherwise, Nurarihyon uses flood fill to assign each move not removed from possibility a score. The score is calculated by first calculating the enclosed space a move moves towards, then assigning all squares in the enclosed space points: empty squares are assigned 1 point, hazard squares are assigned 1/16 points, and food squares are assigned 1 more than the amount of health Nurarihyon would restore if it consumed food now. The score is the sum of all points. Nurarihyon then selects the move with the greatest score.
+On every turn of each game, Nurikabe first removes moves that move Nurikabe back on its own neck, hit walls, hit itself, and collide with others from possibility. If all moves are removed from possibility, then Nurikabe moves up. Otherwise, Nurikabe selects a random move.
