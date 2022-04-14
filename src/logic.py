@@ -177,13 +177,13 @@ def _avoid_hitting_myself(my_body: dict, possible_moves: List[str]) -> List[str]
     return: The list of remaining possible_moves, with 'body' directions removed
     """
     my_head = my_body[0]  # The first body coordinate is always the head
-    body_set_except_tail = tools.get_body_set_except_tail(my_body)
+    my_body_except_tail = tools.get_my_body_except_tail(my_body)
     possible_move_set = tools.get_possible_move_set(possible_moves)
 
     adjacent_squares_and_moves = tools.get_adjacent_squares_and_moves(my_head)
 
     for adjacent_square, move in adjacent_squares_and_moves:
-        if adjacent_square in body_set_except_tail and move in possible_move_set:
+        if adjacent_square in my_body_except_tail and move in possible_move_set:
             possible_moves.remove(move)
 
     return possible_moves
@@ -203,8 +203,8 @@ def _avoid_colliding_others(
     return: The list of remaining possible_moves, with 'others' directions removed
     """
     my_head = my_body[0]  # The first body coordinate is always the head
-    other_body_set_except_squadmates_and_tails = (
-        tools.get_other_body_set_except_squadmates_and_tails(data)
+    other_bodies_except_squadmates_and_tails = (
+        tools.get_other_bodies_except_squadmates_and_tails(data)
     )
     possible_move_set = tools.get_possible_move_set(possible_moves)
 
@@ -212,7 +212,7 @@ def _avoid_colliding_others(
 
     for adjacent_square, move in adjacent_squares_and_moves:
         if (
-            adjacent_square in other_body_set_except_squadmates_and_tails
+            adjacent_square in other_bodies_except_squadmates_and_tails
             and move in possible_move_set
         ):
             possible_moves.remove(move)

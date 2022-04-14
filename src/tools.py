@@ -57,19 +57,19 @@ def get_possible_move_set(possible_moves: list) -> Set[str]:
     return possible_move_set
 
 
-def get_body_set_except_tail(body: list) -> Set[tuple]:
+def get_my_body_except_tail(body: list) -> Set[tuple]:
     """
     body: List of x/y coordinates for every segment of a Battlesnake.
             e.g. [{"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 2, "y": 0}]
 
-    return: A set of x/y coordinates for every segment of a Battlesnake except the tail
+    return: A set of x/y coordinates for every segment of my Battlesnake except the tail
 
     """
-    body_set_except_tail = {(segment["x"], segment["y"]) for segment in body[:-1]}
-    return body_set_except_tail
+    my_body_except_tail = {(segment["x"], segment["y"]) for segment in body[:-1]}
+    return my_body_except_tail
 
 
-def get_other_body_set_except_squadmates_and_tails(data: dict) -> Set[tuple]:
+def get_other_bodies_except_squadmates_and_tails(data: dict) -> Set[tuple]:
     """
     data: Dictionary of all Game Board data as received from the Battlesnake Engine.
     For a full example of 'data', see https://docs.battlesnake.com/references/api/sample-move-request
@@ -77,20 +77,20 @@ def get_other_body_set_except_squadmates_and_tails(data: dict) -> Set[tuple]:
     return: A set of x/y coordinates for every segment of other Battlesnakes except squadmates and tails
 
     """
-    your_id = get_your_id(data)
-    your_squad = get_your_squad(data)
+    my_id = get_my_id(data)
+    my_squad = get_my_squad(data)
     game_type = get_game_type(data)
     snakes = get_snakes(data)
 
-    other_body_set_except_squadmates_and_tails = {
+    other_bodies_except_squadmates_and_tails = {
         (body["x"], body["y"])
         for snake in snakes
-        if snake["id"] != your_id
-        and (game_type != "squad" or snake["squad"] != your_squad)
+        if snake["id"] != my_id
+        and (game_type != "squad" or snake["squad"] != my_squad)
         for body in snake["body"][:-1]
     }
 
-    return other_body_set_except_squadmates_and_tails
+    return other_bodies_except_squadmates_and_tails
 
 
 def get_game_type(data: dict) -> str:
