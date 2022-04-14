@@ -1,6 +1,8 @@
 import random
 from typing import List, Dict
 
+import tools
+
 """
 This file can be a nice home for your Battlesnake's logic and helper functions.
 
@@ -76,10 +78,9 @@ def choose_move(data: dict) -> str:
     board = data['board']
     board_height = board['height']
     board_width = board['width']
-    if data["game"]["ruleset"]["name"] != "wrapped":
-        possible_moves = _avoid_hitting_walls(
-            my_body, possible_moves, board_height, board_width
-        )
+    possible_moves = _avoid_hitting_walls(
+        my_body, possible_moves, board_height, board_width, data
+    )
 
     # TODO: Step 2 - Don't hit yourself.
     # Use information from `my_body` to avoid moves that would collide with yourself.
@@ -97,7 +98,7 @@ def choose_move(data: dict) -> str:
     # move = random.choice(possible_moves) if possible_moves else "up"
     # TODO: Explore new strategies for picking a move that are better than random
     if possible_moves:
-        move = random.choice(best_moves)
+        move = random.choice(possible_moves)
     else:
         move = "up"
 
@@ -119,54 +120,49 @@ def _avoid_my_neck(my_body: dict, possible_moves: List[str]) -> List[str]:
     """
     my_head = my_body[0]  # The first body coordinate is always the head
     my_neck = my_body[1]  # The segment of body right after the head is the 'neck'
-    possible_moves_ = {possible_move for possible_move in possible_moves}
 
-    if (
-        my_neck["x"] < my_head["x"] and "left" in possible_moves_
-    ):  # my neck is left of my head
+    if my_neck["x"] < my_head["x"]:  # my neck is left of my head
         possible_moves.remove("left")
-    elif (
-        my_neck["x"] > my_head["x"] and "right" in possible_moves_
-    ):  # my neck is right of my head
+    elif my_neck["x"] > my_head["x"]:  # my neck is right of my head
         possible_moves.remove("right")
-    elif (
-        my_neck["y"] < my_head["y"] and "down" in possible_moves_
-    ):  # my neck is below my head
+    elif my_neck["y"] < my_head["y"]:  # my neck is below my head
         possible_moves.remove("down")
-    elif (
-        my_neck["y"] > my_head["y"] and "up" in possible_moves_
-    ):  # my neck is above my head
+    elif my_neck["y"] > my_head["y"]:  # my neck is above my head
         possible_moves.remove("up")
 
     return possible_moves
 
 
 def _avoid_hitting_walls(
-    my_body: dict, possible_moves: List[str], board_height: int, board_width: int
+    my_body: dict,
+    possible_moves: List[str],
+    board_height: int,
+    board_width: int,
+    data: dict,
 ) -> List[str]:
     """
     my_body: List of dictionaries of x/y coordinates for every segment of a Battlesnake.
             e.g. [{"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 2, "y": 0}]
     possible_moves: List of strings. Moves to pick from.
             e.g. ["up", "down", "left", "right"]
+    data: Dictionary of all Game Board data as received from the Battlesnake Engine.
+    For a full example of 'data', see https://docs.battlesnake.com/references/api/sample-move-request
 
     return: The list of remaining possible_moves, with 'wall' directions removed
     """
     my_head = my_body[0]  # The first body coordinate is always the head
-    possible_moves_ = {possible_move for possible_move in possible_moves}
+    game_type = tools.get_game_type(data)
 
-    if 0 == my_head["x"] and "left" in possible_moves_:  # my head is at the left wall
-        possible_moves.remove("left")
-    if (
-        board_width - 1 == my_head["x"] and "right" in possible_moves_
-    ):  # my head is at the right wall
-        possible_moves.remove("right")
-    if 0 == my_head["y"] and "down" in possible_moves_:  # my head is at the bottom wall
-        possible_moves.remove("down")
-    if (
-        board_height - 1 == my_head["y"] and "up" in possible_moves_
-    ):  # my head is at the top wall
-        possible_moves.remove("up")
+    if game_type != "wrapped":
+        possible_move_set = tools.get_possible_move_set(possible_moves)
+        adjacent_squares_and_moves = tools.get_adjacent_squares_and_moves(my_head)
+
+        for adjacent_square, move in adjacent_squares_and_moves:
+            out_of_bounds = tools.is_out_of_bounds(
+                adjacent_square, board_height, board_width
+            )
+            if out_of_bounds and move in possible_move_set:
+                possible_moves.remove(move)
 
     return possible_moves
 
@@ -181,29 +177,14 @@ def _avoid_hitting_myself(my_body: dict, possible_moves: List[str]) -> List[str]
     return: The list of remaining possible_moves, with 'body' directions removed
     """
     my_head = my_body[0]  # The first body coordinate is always the head
-    my_body_ = {(body["x"], body["y"]) for body in my_body}
-    possible_moves_ = {possible_move for possible_move in possible_moves}
+    body_set_except_tail = tools.get_body_set_except_tail(my_body)
+    possible_move_set = tools.get_possible_move_set(possible_moves)
 
-    if (
-        my_head["x"] - 1,
-        my_head["y"],
-    ) in my_body_ and "left" in possible_moves_:  # my body is to the left of my head
-        possible_moves.remove("left")
-    if (
-        my_head["x"] + 1,
-        my_head["y"],
-    ) in my_body_ and "right" in possible_moves_:  # my body is to the right of my head
-        possible_moves.remove("right")
-    if (
-        my_head["x"],
-        my_head["y"] - 1,
-    ) in my_body_ and "down" in possible_moves_:  # my body is under my head
-        possible_moves.remove("down")
-    if (
-        my_head["x"],
-        my_head["y"] + 1,
-    ) in my_body_ and "up" in possible_moves_:  # my body is over my head
-        possible_moves.remove("up")
+    adjacent_squares_and_moves = tools.get_adjacent_squares_and_moves(my_head)
+
+    for adjacent_square, move in adjacent_squares_and_moves:
+        if adjacent_square in body_set_except_tail and move in possible_move_set:
+            possible_moves.remove(move)
 
     return possible_moves
 
@@ -222,34 +203,19 @@ def _avoid_colliding_others(
     return: The list of remaining possible_moves, with 'others' directions removed
     """
     my_head = my_body[0]  # The first body coordinate is always the head
-    bodies = {
-        (body["x"], body["y"])
-        for snake in data["board"]["snakes"]
-        for body in snake["body"]
-        if snake["id"] != data["you"]["id"]
-    }
-    possible_moves_ = {possible_move for possible_move in possible_moves}
+    other_body_set_except_squadmates_and_tails = (
+        tools.get_other_body_set_except_squadmates_and_tails(data)
+    )
+    possible_move_set = tools.get_possible_move_set(possible_moves)
 
-    if (
-        my_head["x"] - 1,
-        my_head["y"],
-    ) in bodies and "left" in possible_moves_:  # others are to the left of my head
-        possible_moves.remove("left")
-    if (
-        my_head["x"] + 1,
-        my_head["y"],
-    ) in bodies and "right" in possible_moves_:  # others are to the right of my head
-        possible_moves.remove("right")
-    if (
-        my_head["x"],
-        my_head["y"] - 1,
-    ) in bodies and "down" in possible_moves_:  # others are under my head
-        possible_moves.remove("down")
-    if (
-        my_head["x"],
-        my_head["y"] + 1,
-    ) in bodies and "up" in possible_moves_:  # others are over my head
-        possible_moves.remove("up")
+    adjacent_squares_and_moves = tools.get_adjacent_squares_and_moves(my_head)
+
+    for adjacent_square, move in adjacent_squares_and_moves:
+        if (
+            adjacent_square in other_body_set_except_squadmates_and_tails
+            and move in possible_move_set
+        ):
+            possible_moves.remove(move)
 
     return possible_moves
 
